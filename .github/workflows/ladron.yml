@@ -1,0 +1,72 @@
+name: ladron
+
+on:
+  workflow_dispatch: # Se activa de forma manual con el botón de PLAY en la web de GitHub
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  descarga_bunker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🗄️ Inicializando espacio en el disco virtual de Microsoft
+        uses: actions/checkout@v4
+
+      - name: 🛠️ Instalar FFmpeg y herramientas de forma interna y nativa
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg curl
+
+      - name: 🚀 Extracción en Cadena Directa e Inmune a Bloqueos de Tamaño
+        run: |
+          # 🪓 [REACTOR CENTRAL INDUSTRIAL v6.5 - STREAMDROME AUTOSYNC CORE]
+          export TERM=xterm
+          
+          # 🔑 CREDENCIAL AUTOMÁTICA: Usa las llaves de tu cuenta limpia actual
+          export GH_TOKEN=${{ secrets.GITHUB_TOKEN }}
+          
+          echo "📡 [STREAMDROME] SUCCIONANDO ÓRDENES DE TRABAJO DESDE EL GIST..."
+          
+          # 1. Descarga de tu playlist unificada desde tu nuevo Gist público/privado
+          curl -s "https://gist.githubusercontent.com/chester821bo-beep/8737835852d8c34e1db318a52aa0073a/raw/1408.txt" | tr -d '\r' | sed '/^$/d' > ordenes_bunker.txt
+         
+          contador=1
+          
+          # 2. EL REMACHE MAESTRO DE AJEDREZ: Descriptor de archivos 3 (<&3) para blindar el bucle
+          while read -r linea <&3 || [ -n "$linea" ]; do
+            URL_PIRATA=$(echo "$linea" | awk -F'|' '{print $1}' | tr -d ' ')
+            NOMBRE_FINAL=$(echo "$linea" | awk -F'|' '{print $2}' | tr -d ' ')
+            
+            if [ -n "$URL_PIRATA" ] && [ -n "$NOMBRE_FINAL" ]; then
+              echo "------------------------------------------------------------"
+              echo "🍿 [PROCESANDO TRABAJO N° $contador]: $NOMBRE_FINAL"
+              echo "------------------------------------------------------------"
+              
+              echo "📥 FASE ÚNICA: Extrayendo, Remuestreando y Purificando el Flujo Directo por Red..."
+              ffmpeg -y -nostdin \
+                -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 5 \
+                -user_agent "VLC/3.0.18 LibVLC/3.0.18" -i "$URL_PIRATA" \
+                -filter_complex "[0:v]scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2,setsar=1:1[v_moldeado]" \
+                -map "[v_moldeado]" -map 0:a:0? -r 30 -pix_fmt yuv420p \
+                -c:v libx264 -preset ultrafast -crf 22 -g 60 -keyint_min 60 \
+                -c:a aac -b:a 128k -ac 2 -ar 44100 -async 1 "$NOMBRE_FINAL" || { echo "⚠️ Falló la extracción del fideo. Saltando..."; rm -f "$NOMBRE_FINAL"; contador=$((contador + 1)); continue; }
+              
+              # ⏸️ CONTROL DE TAMAÑO ANTES DE SUBIR
+              if [ -s "$NOMBRE_FINAL" ]; then
+                echo "💾 FASE DE COFRE: Inyectando el video masterizado en las Releases..."
+                gh release upload bunker_mutiny "$NOMBRE_FINAL" --clobber || echo "⚠️ Falló la subida de chapa."
+              else
+                echo "⚠️ El archivo $NOMBRE_FINAL quedó vacío. No se subirá."
+              fi
+              
+              echo "🪓 FASE DE PURGA: Reseteando espacio de disco virtual..."
+              rm -f "$NOMBRE_FINAL"
+              
+              echo "✅ TRABAJO N° $contador COMPLETADO CON ÉXITO ABSOLUTO."
+              contador=$((contador + 1))
+            fi
+          done 3< ordenes_bunker.txt
+          
+          echo "🏁 [STREAMDROME] Toda la cartelera del Gist fue clonada con éxito."
