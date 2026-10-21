@@ -23,8 +23,8 @@ jobs:
           echo "Cargando..." > letrero.txt
           echo "Streamdrome - Zona de Testeo Automatizada" > abajo.txt
           
-          URL_GIST_NOTICIAS="https://githubusercontent.com"
-          URL_GIST_PLAYLIST="https://githubusercontent.com"
+          URL_GIST_NOTICIAS="https://gist.githubusercontent.com/chester821bo-beep/8737835852d8c34e1db318a52aa0073a/raw/noticias.txt"
+          URL_GIST_PLAYLIST="https://gist.githubusercontent.com/chester821bo-beep/8737835852d8c34e1db318a52aa0073a/raw/playlist.txt"
          
           curl -s "$URL_GIST_NOTICIAS" | head -n 1 | tr -d '\r\n' > abajo.txt
           curl -L -s "$URL_GIST_PLAYLIST" | tr -d '\r' | sed '/^$/d' > grilla_cruda.txt
