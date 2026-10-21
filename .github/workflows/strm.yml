@@ -62,21 +62,44 @@ jobs:
           TITULO_INICIAL=$(echo "$PRIMERA_LINEA" | awk -F'|' '{print $2}' | sed 's/^[ \t]*//;s/[ \t]*$//')
           echo "${TITULO_INICIAL:-Modo Pruebas Activo}" > letrero.txt
           
-          # 🎛️ [DEMONIO ASÍNCRONO DEL CHAT - SIMULACIÓN DE NAVEGADOR HUMANO]
+          # ⚙️ INSTALACIÓN DEL RECEPTOR NATIVO EN LA NUBE
+          pip install kick-chat 2>/dev/null
+          
+          # 🎛️ [DEMONIO ASÍNCRONO v722 - MOTOR WEBSOCKET REAL KICK-CHAT]
+          # Escucha el caño persistente, filtra el texto al formato 'usuario:mensaje' y rota con tu Gist
           (
+            # Lanzamos kick-chat guardando los mensajes vivos en un archivo temporal de la RAM
+            kick-chat streamdrome_2 > raw_chat.txt 2>/dev/null &
+            
+            pasada=1
             while true; do
-              sleep 18
-              # Consulta enmascarada a la API de tu chat de pruebas streamdrome_2
-              ULTIMO_MENSAJE=$(curl -s -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" -H "Accept-Language: es-ES,es;q=0.9" "https://kick.com" | jq -r '.data.messages.content' 2>/dev/null | tr -d '\r\n')
+              sleep 18 # Espera que el letrero termine de cruzar el canvas
               
-              if [ -z "$ULTIMO_MENSAJE" ] || [ "$ULTIMO_MENSAJE" = "null" ]; then
-                ULTIMO_MENSAJE=$(curl -s "$URL_GIST_NOTICIAS" | head -n 1 | tr -d '\r\n')
+              if [ $((pasada % 2)) -ne 0 ]; then
+                # 📢 PASADA IMPAR: Tu letrero base desde tu Gist de noticias
+                ULTIMO_TEXTO=$(curl -s "$URL_GIST_NOTICIAS" | head -n 1 | tr -d '\r\n')
+                echo "${ULTIMO_TEXTO:-🍿 Bienvenidos a Streamdrome}" > abajo.txt
+              else
+                # 💬 PASADA PAR: Extraemos la última línea real del caño de la terminal
+                # kick-chat devuelve 'Username: Message'. Reemplazamos los espacios del divisor por dos puntos limpios.
+                ULTIMO_REGISTRO=$(tail -n 1 raw_chat.txt 2>/dev/null | tr -d '\r\n')
+                
+                if [ -z "$ULTIMO_REGISTRO" ]; then
+                  # Si nadie escribió nada en este tramo, recae sobre las noticias
+                  ULTIMO_TEXTO=$(curl -s "$URL_GIST_NOTICIAS" | head -n 1 | tr -d '\r\n')
+                  echo "${ULTIMO_TEXTO:-🍿 Bienvenidos a Streamdrome}" > abajo.txt
+                else
+                  # Formato rígido limpio directo de los píxeles de la terminal: usuario:mensaje
+                  USER_MSG=$(echo "$ULTIMO_REGISTRO" | sed 's/: /:/')
+                  echo "$USER_MSG" > abajo.txt
+                fi
               fi
               
-              echo "Chat: $ULTIMO_MENSAJE" > abajo.txt
+              pasada=$((pasada + 1))
               sleep 2
             done
           ) &
+
           
           echo "📡 [STREAMDROME_2] EMITIENDO ENLACE CON TICKER DINÁMICO..."
           
