@@ -1,5 +1,4 @@
 name: 📡 Streamdrome_2 Test Engine v721
-
 on:
   workflow_dispatch: # Botón manual de PLAY en la web de GitHub
 
@@ -17,42 +16,39 @@ jobs:
 
       - name: 🚀 Emisión de Prueba Unificada hacia Streamdrome_2
         run: |
-          # 🪓 [REACTOR DE PRUEBAS v721 - CHAT & PAUSE AUTOMATION]
+          # 🪓 [REACTOR DE PRUEBAS v721 - NOTICIAS AUTOMATION]
           export TERM=xterm
-          
           echo "Cargando..." > letrero.txt
           echo "Streamdrome - Zona de Testeo Automatizada" > abajo.txt
-          
+
           URL_GIST_NOTICIAS="https://gist.githubusercontent.com/chester821bo-beep/8737835852d8c34e1db318a52aa0073a/raw/noticias.txt"
           URL_GIST_PLAYLIST="https://gist.githubusercontent.com/chester821bo-beep/8737835852d8c34e1db318a52aa0073a/raw/playlist.txt"
          
           curl -s "$URL_GIST_NOTICIAS" | head -n 1 | tr -d '\r\n' > abajo.txt
           curl -L -s "$URL_GIST_PLAYLIST" | tr -d '\r' | sed '/^$/d' > grilla_cruda.txt
-          
+
           echo "# Lista de videos locales para concat" > playlist_local.txt
           contador=1
-          
+
           # 1. Bucle de pre-descarga de tus series
           while read -r linea || [ -n "$linea" ]; do
             URL_INTERNET=$(echo "$linea" | awk -F'|' '{print $1}' | tr -d ' ')
-            
             if [ -n "$URL_INTERNET" ]; then
               echo "📥 Descargando Tramo $contador a la RAM..."
               curl -L -H "Authorization: token ${{ secrets.TOKEN_B }}" \
                    -H "User-Agent: VLC/3.0.18 LibVLC/3.0.18" \
                    -o "local_part_${contador}.mp4" "$URL_INTERNET"
-              
+
               if [ -s "local_part_${contador}.mp4" ]; then
                 # Si el video es válido, lo sumamos a la playlist
                 echo "file 'local_part_${contador}.mp4'" >> playlist_local.txt
-                
+
                 # ⏸️ REMACHE DE PAUSA: Creamos un micro-video de 10 segundos de espera entre bloques
-                ffmpeg -y -f devvideo -size 1280x720 -rate 30 -loop 1 -i plantilla_horizontal.png -f taged -t 10 -pix_fmt yuv420p -r 30 -g 60 -f lavfi -i anullsrc=r=44100:cl=stereo -c:a aac -b:a 128k -t 10 "pausa_${contador}.mp4" 2>/dev/null || true
-                
+                ffmpeg -y -f lavfi -i color=c=black:s=1280x720:r=30 -f lavfi -i anullsrc=r=44100:cl=stereo -c:v libx264 -t 10 -pix_fmt yuv420p -c:a aac -b:a 128k "pausa_${contador}.mp4" 2>/dev/null || true
+
                 if [ -s "pausa_${contador}.mp4" ]; then
                   echo "file 'pausa_${contador}.mp4'" >> playlist_local.txt
                 fi
-                
                 contador=$((contador + 1))
               fi
             fi
@@ -61,56 +57,27 @@ jobs:
           PRIMERA_LINEA=$(head -n 1 grilla_cruda.txt)
           TITULO_INICIAL=$(echo "$PRIMERA_LINEA" | awk -F'|' '{print $2}' | sed 's/^[ \t]*//;s/[ \t]*$//')
           echo "${TITULO_INICIAL:-Modo Pruebas Activo}" > letrero.txt
-          
-          # ⚙️ INSTALACIÓN DEL RECEPTOR NATIVO EN LA NUBE
-          pip install kick-chat 2>/dev/null
-          
-          # 🎛️ [DEMONIO ASÍNCRONO v722 - MOTOR WEBSOCKET REAL KICK-CHAT]
-          # Escucha el caño persistente, filtra el texto al formato 'usuario:mensaje' y rota con tu Gist
+
+          # 🎛️ [DEMONIO DE ACTUALIZACIÓN DE NOTICIAS - CADA 30 SEGUNDOS]
+          # Bucle limpio que solo rota el texto de abajo leyendo tu Gist sin tocar el codificador
           (
-            # Lanzamos kick-chat guardando los mensajes vivos en un archivo temporal de la RAM
-            kick-chat streamdrome_2 > raw_chat.txt 2>/dev/null &
-            
-            pasada=1
-            while true; do
-              sleep 18 # Espera que el letrero termine de cruzar el canvas
-              
-              if [ $((pasada % 2)) -ne 0 ]; then
-                # 📢 PASADA IMPAR: Tu letrero base desde tu Gist de noticias
-                ULTIMO_TEXTO=$(curl -s "$URL_GIST_NOTICIAS" | head -n 1 | tr -d '\r\n')
-                echo "${ULTIMO_TEXTO:-🍿 Bienvenidos a Streamdrome}" > abajo.txt
-              else
-                # 💬 PASADA PAR: Extraemos la última línea real del caño de la terminal
-                # kick-chat devuelve 'Username: Message'. Reemplazamos los espacios del divisor por dos puntos limpios.
-                ULTIMO_REGISTRO=$(tail -n 1 raw_chat.txt 2>/dev/null | tr -d '\r\n')
-                
-                if [ -z "$ULTIMO_REGISTRO" ]; then
-                  # Si nadie escribió nada en este tramo, recae sobre las noticias
-                  ULTIMO_TEXTO=$(curl -s "$URL_GIST_NOTICIAS" | head -n 1 | tr -d '\r\n')
-                  echo "${ULTIMO_TEXTO:-🍿 Bienvenidos a Streamdrome}" > abajo.txt
-                else
-                  # Formato rígido limpio directo de los píxeles de la terminal: usuario:mensaje
-                  USER_MSG=$(echo "$ULTIMO_REGISTRO" | sed 's/: /:/')
-                  echo "$USER_MSG" > abajo.txt
-                fi
-              fi
-              
-              pasada=$((pasada + 1))
-              sleep 2
-            done
+          while true; do
+            ULTIMO_TEXTO=$(curl -s "$URL_GIST_NOTICIAS" | head -n 1 | tr -d '\r\n')
+            echo "${ULTIMO_TEXTO:-🍿 Bienvenidos a Streamdrome}" > abajo.txt
+            sleep 30
+          done
           ) &
 
-          
           echo "📡 [STREAMDROME_2] EMITIENDO ENLACE CON TICKER DINÁMICO..."
-          
+
           # Inyección directa SRT usando tus credenciales de la cuenta de pruebas streamdrome_2
           ffmpeg -y \
             -fflags +genpts+igndts+flush_packets+discardcorrupt+nofillin -re -async 1 \
             -f concat -safe 0 \
             -i playlist_local.txt \
             -re -loop 1 -i plantilla_horizontal.png \
-            -filter_complex "[0:v]scale=1280:720,crop=1270:710:5:5,hue=s=0.95,rotate=0.02:fillcolor=black[peli_expandida]; [1:v]scale=1280:720[fondo_base]; [fondo_base][peli_expandida]overlay=0:0:shortest=1[canvas_parcial]; [canvas_parcial]drawtext=textfile=letrero.txt:reload=1:x=30:y=25:fontsize=24:fontcolor=0x00e676:fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:box=1:boxcolor=black@0.6:boxborderw=5,drawtext=textfile=abajo.txt:reload=1:x=1280-mod(t*130\,1280+tw):y=665:fontsize=24:fontcolor=0xFFFFFF:fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:box=1:boxcolor=black@0.5:boxborderw=4[canvas_fusionado]" \
+            -filter_complex "[0:v]scale=1280:720,crop=1270:710:5:5,hue=s=0.98,rotate=0.01:fillcolor=black[peli_expandida]; [1:v]scale=1280:720[fondo_base]; [fondo_base][peli_expandida]overlay=0:0:shortest=1[canvas_parcial]; [canvas_parcial]drawtext=textfile=letrero.txt:reload=1:x=30:y=25:fontsize=24:fontcolor=0x00e676:fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:box=1:boxcolor=black@0.6:boxborderw=5,drawtext=textfile=abajo.txt:reload=1:x=1280-mod(t*130\,1280+tw):y=665:fontsize=24:fontcolor=0xFFFFFF:fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:box=1:boxcolor=black@0.5:boxborderw=4[canvas_fusionado]" \
             -r 30 -g 60 -keyint_min 60 -map 0:a:0? -map "[canvas_fusionado]" -sn -dn -pix_fmt yuv420p \
-            -c:v libx264 -preset ultrafast -tune zerolatency -b:v 2500k -maxrate 2500k -bufsize 5000k \
+            -c:v libx264 -preset superfast -tune zerolatency -b:v 2500k -maxrate 2500k -bufsize 5000k \
             -c:a aac -b:a 128k -ac 2 -ar 44100 -af "pan=stereo|c0=0.95*c0+0.05*c1|c1=0.05*c0+0.95*c1,aresample=async=1" \
-            -f mpegts 'srt://fa723fc1b171.srt.live-video.net:9000?streamid=sk_us-west-2_MqGIuZCjdkwn_W8taony5k1gvPaCz1F7MWd2Rd0QAvb&passphrase=vrdzu5pih7bmRaVralELJ2wlBzrQPgsp08kGoZmPTKkqlkbN8CPzuUEYUtJU5ivRJE6nBqIOGPr2V1Q' || true
+            -f mpegts "${{ secrets.KICK_SRT_CHANNEL }}" || true
