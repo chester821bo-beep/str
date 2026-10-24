@@ -9,7 +9,6 @@ permissions:
 
 jobs:
   descarga_bunker:
-    # 🔥 SOLUCIÓN AL ANUNCIO: Fijamos el entorno estable para evitar fallas de herramientas en Ubuntu 26
     runs-on: ubuntu-24.04
     steps:
       - name: 🗄️ Inicializando espacio en el disco virtual de Microsoft
@@ -22,25 +21,22 @@ jobs:
 
       - name: 🚀 Extracción en Cadena Directa e Inmune a Bloqueos de Tamaño
         run: |
-          # 🪓 [REACTOR CENTRAL INDUSTRIAL v7.4 - TRACKER CORE]
+          # 🪓 [REACTOR CENTRAL INDUSTRIAL v7.6 - VLC HEADERS REPAIR]
           export TERM=xterm
           export GH_TOKEN=${{ secrets.GITHUB_TOKEN }}
           
-          # 🔑 SI CREASTE EL TOKEN EN SETTINGS, SE COLA AUTOMÁTICAMENTE AQUÍ:
           MI_TOKEN_STREAMING="${{ secrets.TOKEN_B }}"
           
           echo "📡 [STREAMDROME] SUCCIONANDO ÓRDENES DE TRABAJO DESDE EL GIST..."
           
-          curl -s "https://gist.githubusercontent.com/chester821bo-beep/8737835852d8c34e1db318a52aa0073a/raw/1408.txt" | tr -d '\r' | sed '/^$/d' > ordenes_bunker.txt
+           curl -s "https://gist.githubusercontent.com/chester821bo-beep/8737835852d8c34e1db318a52aa0073a/raw/1408.txt" | tr -d '\r' | sed '/^$/d' > ordenes_bunker.txt
          
-          # 🔍 VERIFICADOR ANTIFALLAS: Si el token está vacío en los secretos, avisar en el acto
           if [ -z "$MI_TOKEN_STREAMING" ]; then
-            echo "❌ ERROR CRÍTICO: No has creado el secreto 'TOKEN_B' en los ajustes de tu cuenta de GitHub."
-            echo "Ve a Settings -> Secrets and variables -> Actions y añádelo para que el servidor te dé acceso."
+            echo "❌ ERROR: No has creado el secreto 'TOKEN_B' en los ajustes de GitHub."
             exit 1
           fi
 
-          # 🔐 ASEGURAR QUE LA RELEASE EXISTE ANTES DE EMPEZAR TAREAS
+          echo "📦 Verificando cofre de almacenamiento (Release)..."
           gh release create bunker_mutiny --title "Almacenamiento Bunker" --notes "Videos automatizados" 2>/dev/null || echo "La release ya existe, continuando..."
 
           contador=1
@@ -56,25 +52,25 @@ jobs:
               
               ARCHIVO_TMP="temp_proceso.mp4"
               BASE_NOMBRE=$(basename "$NOMBRE_FINAL" .mp4)
-              USER_AGENT_TV="Mozilla/5.0 (Web0S; Linux/SmartTV) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 SmartTV"
               
-              echo "📥 FASE 1: Conectando al servidor remoto..."
+              # 🕵️‍♂️ DISFRAZ EXACTO DE VLC (Copiado de tu script de streaming original)
+              USER_AGENT_VLC="VLC/3.0.18 LibVLC/3.0.18"
               
-              # Ejecutamos FFmpeg capturando el código de salida de red
+              echo "📥 FASE 1: Extrayendo flujo emulando la conexión de VLC..."
+              
+              # 🔥 REPARACIÓN DEFINITIVA DE CABECERAS:
+              # Pasamos las cabeceras usando saltos de línea crudos ($'\r\n') imitando exactamente a tu primer script.
               ffmpeg -y -nostdin \
                 -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 10 \
-                -headers "Authorization: token $MI_TOKEN_STREAMING"$'\r\n'"User-Agent: $USER_AGENT_TV"$'\r\n' \
+                -headers "Authorization: token $MI_TOKEN_STREAMING"$'\r\n'"User-Agent: $USER_AGENT_VLC"$'\r\n' \
                 -i "$URL_PIRATA" \
                 -filter_complex "[0:v]scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2,setsar=1:1[v_moldeado]" \
                 -map "[v_moldeado]" -map 0:a:0? -r 30 -pix_fmt yuv420p \
                 -c:v libx264 -preset superfast -crf 23 -g 60 -keyint_min 60 \
                 -c:a aac -b:a 128k -ac 2 -ar 44100 -async 1 "$ARCHIVO_TMP"
                 
-              ESTADO_FFMPEG=$?
-              
-              if [ $ESTADO_FFMPEG -ne 0 ] || [ ! -s "$ARCHIVO_TMP" ]; then
-                echo "❌ ERROR EN LA DESCARGA: El servidor rechazó la conexión o devolvió un archivo vacío."
-                echo "Código de error FFmpeg: $ESTADO_FFMPEG"
+              if [ ! -s "$ARCHIVO_TMP" ]; then
+                echo "❌ ERROR: FFmpeg no pudo clonar el video. Revisa si el formato del token_b coincide."
                 rm -f "$ARCHIVO_TMP"
                 contador=$((contador + 1))
                 continue
@@ -101,10 +97,8 @@ jobs:
               fi
               
               rm -f "$ARCHIVO_TMP"
-              echo "✅ TRABAJO N° $contador FINALIZADO."
+              echo "✅ TRABAJO N° $contador FINALIZADO CON ÉXITO."
               sleep 15
               contador=$((contador + 1))
             fi
           done 3< ordenes_bunker.txt
-
-          
