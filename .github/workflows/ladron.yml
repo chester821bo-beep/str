@@ -17,11 +17,11 @@ jobs:
       - name: 🛠️ Instalar FFmpeg y herramientas de forma interna y nativa
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg curl
+          sudo apt-get install -y ffmpeg curl jq bc
 
       - name: 🚀 Extracción en Cadena Directa e Inmune a Bloqueos de Tamaño
         run: |
-          # 🪓 [REACTOR CENTRAL INDUSTRIAL v6.5 - STREAMDROME AUTOSYNC CORE]
+          # 🪓 [REACTOR CENTRAL INDUSTRIAL v7.0 - STREAMDROME ANTI-BAN CORE]
           export TERM=xterm
           export GH_TOKEN=${{ secrets.GITHUB_TOKEN }}
           
@@ -30,10 +30,6 @@ jobs:
           # 1. Descarga de tu playlist unificada
           curl -s "https://gist.githubusercontent.com/chester821bo-beep/8737835852d8c34e1db318a52aa0073a/raw/1408.txt" | tr -d '\r' | sed '/^$/d' > ordenes_bunker.txt
          
-          # 🔐 ASEGURAR QUE LA RELEASE EXISTE ANTES DE SUBIR
-          echo "📦 Verificando cofre de almacenamiento (Release)..."
-          gh release create bunker_mutiny --title "Almacenamiento Bunker" --notes "Videos automatizados" 2>/dev/null || echo "La release ya existe, continuando..."
-
           contador=1
           
           # 2. Descriptor de archivos 3 (<&3) para blindar el bucle
@@ -46,26 +42,63 @@ jobs:
               echo "🍿 [PROCESANDO TRABAJO N° $contador]: $NOMBRE_FINAL"
               echo "------------------------------------------------------------"
               
-              echo "📥 FASE ÚNICA: Extrayendo y clonando el flujo por red de forma directa..."
+              ARCHIVO_TMP="temp_proceso.mp4"
+              BASE_NOMBRE=$(basename "$NOMBRE_FINAL" .mp4)
               
-              # 🔥 CAMBIO CLAVE: Copia directa sin alterar el molde para que sea instantáneo y no se cuelgue.
-              # Si es una transmisión en vivo infinita, puedes agregar '-t 3600' para que solo robe 1 hora de video.
+              # 🕵️‍♂️ CAMUFLAJE DE TELEVISOR / SMART TV
+              # Nos disfrazamos de un Smart TV LG moderno corriendo WebOS para que el servidor no sospeche de GitHub
+              USER_AGENT_TV="Mozilla/5.0 (Web0S; Linux/SmartTV) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 SmartTV"
+              
+              echo "📥 FASE 1: Descargando y adaptando flujo a velocidad segura..."
+              
+              # 🔥 OPTIMIZACIÓN DE VELOCIDAD INTERNA + PROTECCIÓN DE RED:
+              # - Cambiamos '-preset ultrafast' por '-preset superfast' (Ahorra tiempo interno y da mejor compresión para tu TV).
+              # - Añadimos '-max_delay 500000' y un user-agent de TV para simular una reproducción normal en streaming.
               ffmpeg -y -nostdin \
-                -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 5 \
-                -user_agent "VLC/3.0.18 LibVLC/3.0.18" \
+                -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 10 \
+                -headers "User-Agent: $USER_AGENT_TV" \
                 -i "$URL_PIRATA" \
-                -c copy -bsf:a aac_adtstoasc "$NOMBRE_FINAL" || { echo "⚠️ Falló la extracción del fideo. Saltando..."; rm -f "$NOMBRE_FINAL"; contador=$((contador + 1)); continue; }
+                -filter_complex "[0:v]scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2,setsar=1:1[v_moldeado]" \
+                -map "[v_moldeado]" -map 0:a:0? -r 30 -pix_fmt yuv420p \
+                -c:v libx264 -preset superfast -crf 23 -g 60 -keyint_min 60 \
+                -c:a aac -b:a 128k -ac 2 -ar 44100 -async 1 "$ARCHIVO_TMP" || { echo "⚠️ Falló la extracción del fideo. Saltando..."; rm -f "$ARCHIVO_TMP"; contador=$((contador + 1)); continue; }
+                
+              # ⚖️ MEDIDOR AUTOMÁTICO DE PESO
+              PESO_BYTES=$(stat -c%s "$ARCHIVO_TMP")
+              LIMITE_BYTES=1500000000 # 1.5 Gigabytes estrictos
               
-              # ⏸️ CONTROL DE TAMAÑO ANTES DE SUBIR
-              if [ -s "$NOMBRE_FINAL" ]; then
-                echo "💾 FASE DE COFRE: Inyectando el video masterizado en las Releases..."
-                gh release upload bunker_mutiny "$NOMBRE_FINAL" --clobber || echo "⚠️ Falló la subida de chapa."
+              echo "⚖️ Peso detectado: $PESO_BYTES bytes."
+              
+              if [ "$PESO_BYTES" -gt "$LIMITE_BYTES" ]; then
+                echo "⚠️ EL ARCHIVO EXCEDE EL GIGA Y MEDIO. Activando serrucho de emergencia..."
+                
+                DURACION_TOTAL=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$ARCHIVO_TMP")
+                MITAD_TIEMPO=$(echo "$DURACION_TOTAL / 2" | bc -l)
+                
+                echo "🎬 Duración: $DURACION_TOTAL segundos. Cortando en el segundo: $MITAD_TIEMPO"
+                
+                ffmpeg -y -i "$ARCHIVO_TMP" -t "$MITAD_TIEMPO" -c copy -map 0 "$NOMBRE_FINAL"
+                ffmpeg -y -ss "$MITAD_TIEMPO" -i "$ARCHIVO_TMP" -c copy -map 0 "${BASE_NOMBRE}_2.mp4"
+                
+                echo "💾 FASE DE COFRE: Inyectando ambas partes en las Releases..."
+                gh release upload bunker_mutiny "$NOMBRE_FINAL" --clobber || echo "⚠️ Falló la subida de la parte 1."
+                gh release upload bunker_mutiny "${BASE_NOMBRE}_2.mp4" --clobber || echo "⚠️ Falló la subida de la parte 2."
+                
+                rm -f "$NOMBRE_FINAL" "${BASE_NOMBRE}_2.mp4"
               else
-                echo "⚠️ El archivo $NOMBRE_FINAL quedó vacío. No se subirá."
+                echo "✅ Peso seguro (Menor a 1.5GB). Subiendo como archivo único..."
+                mv "$ARCHIVO_TMP" "$NOMBRE_FINAL"
+                gh release upload bunker_mutiny "$NOMBRE_FINAL" --clobber || echo "⚠️ Falló la subida de chapa."
+                rm -f "$NOMBRE_FINAL"
               fi
               
-              echo "🪓 FASE DE PURGA: Reseteando espacio de disco virtual..."
-              rm -f "$NOMBRE_FINAL"
+              rm -f "$ARCHIVO_TMP"
+              
+              # ⏸️ EL FRENO DE MANO (Respiro para el Servidor)
+              # Hace que la computadora de GitHub espere 15 segundos antes de pedir la siguiente película.
+              # Así simula que un humano está navegando y no un robot descargando ráfagas de archivos.
+              echo "⏱️ Tomando un respiro de seguridad anti-bloqueo (15 segundos)..."
+              sleep 15
               
               echo "✅ TRABAJO N° $contador COMPLETADO CON ÉXITO ABSOLUTO."
               contador=$((contador + 1))
