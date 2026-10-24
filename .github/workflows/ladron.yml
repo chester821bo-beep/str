@@ -21,7 +21,7 @@ jobs:
 
       - name: 🚀 Extracción en Cadena Directa e Inmune a Bloqueos de Tamaño
         run: |
-          # 🪓 [REACTOR CENTRAL INDUSTRIAL v7.0 - STREAMDROME ANTI-BAN CORE]
+          # 🪓 [REACTOR CENTRAL INDUSTRIAL v7.1 - STREAMDROME AUTH-RESCUE CORE]
           export TERM=xterm
           export GH_TOKEN=${{ secrets.GITHUB_TOKEN }}
           
@@ -45,18 +45,16 @@ jobs:
               ARCHIVO_TMP="temp_proceso.mp4"
               BASE_NOMBRE=$(basename "$NOMBRE_FINAL" .mp4)
               
-              # 🕵️‍♂️ CAMUFLAJE DE TELEVISOR / SMART TV
-              # Nos disfrazamos de un Smart TV LG moderno corriendo WebOS para que el servidor no sospeche de GitHub
+              # 🕵️‍♂️ CAMUFLAJE DE TELEVISOR + TU PASAPORTE SECRETO
               USER_AGENT_TV="Mozilla/5.0 (Web0S; Linux/SmartTV) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 SmartTV"
               
-              echo "📥 FASE 1: Descargando y adaptando flujo a velocidad segura..."
+              echo "📥 FASE 1: Descargando con pase autorizado y adaptando flujo..."
               
-              # 🔥 OPTIMIZACIÓN DE VELOCIDAD INTERNA + PROTECCIÓN DE RED:
-              # - Cambiamos '-preset ultrafast' por '-preset superfast' (Ahorra tiempo interno y da mejor compresión para tu TV).
-              # - Añadimos '-max_delay 500000' y un user-agent de TV para simular una reproducción normal en streaming.
+              # 🔥 REPARACIÓN CLAVE: Reinyectamos tu secret TOKEN_B en las cabeceras de FFmpeg
+              # Pasamos tanto tu token de autorización como el agente de Smart TV juntos.
               ffmpeg -y -nostdin \
                 -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 10 \
-                -headers "User-Agent: $USER_AGENT_TV" \
+                -headers "Authorization: token ${{ secrets.TOKEN_B }}\r\nUser-Agent: $USER_AGENT_TV\r\n" \
                 -i "$URL_PIRATA" \
                 -filter_complex "[0:v]scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2,setsar=1:1[v_moldeado]" \
                 -map "[v_moldeado]" -map 0:a:0? -r 30 -pix_fmt yuv420p \
@@ -94,9 +92,6 @@ jobs:
               
               rm -f "$ARCHIVO_TMP"
               
-              # ⏸️ EL FRENO DE MANO (Respiro para el Servidor)
-              # Hace que la computadora de GitHub espere 15 segundos antes de pedir la siguiente película.
-              # Así simula que un humano está navegando y no un robot descargando ráfagas de archivos.
               echo "⏱️ Tomando un respiro de seguridad anti-bloqueo (15 segundos)..."
               sleep 15
               
@@ -106,3 +101,5 @@ jobs:
           done 3< ordenes_bunker.txt
           
           echo "🏁 [STREAMDROME] Toda la cartelera del Gist fue clonada con éxito."
+
+          
